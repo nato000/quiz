@@ -8,6 +8,7 @@ document.addEventListener('DOMContentLoaded', () => { // отработчик с
     const formAnswers = document.querySelector('#formAnswers'); //создаем переменную формы ответа
     const prevButton = document.querySelector('#prev'); // кнопки модалки
     const nextButton = document.querySelector('#next');
+    const sendButton = document.querySelector('#send'); //отправить результат опроса    
 
     const questions = [
         {
@@ -95,6 +96,7 @@ document.addEventListener('DOMContentLoaded', () => { // отработчик с
     })
 
     const playTest = () => { //функция запуска теста
+        const obj = {}; //варианты ответов
         let = numberQuestion = 0; //переменная с номером вопроса
 
         const renderAnswers = (index) => { // цикл ответов
@@ -114,27 +116,79 @@ document.addEventListener('DOMContentLoaded', () => { // отработчик с
         }
 
         const renderQuestions = (indexQuestion) => { // функция отрисовки вопросов
-            formAnswers.innerHTML = ''; // очистка предыдущих ответов
+            formAnswers.innerHTML = ''; // очистка предыдущих ответов          
 
-            if (numberQuestion >= 0 && numberQuestion <= questions.length - 1) { // условие отрисовки кнопок next и prev 
-                questionTitle.textContent = `${questions[indexQuestion].question}`; // меняем текст через переменную
-                renderAnswers(indexQuestion);
-                nextButton.classList.remove('d-none'); //показать кнопки
-                prevButton.classList.remove('d-none');
-            }
+            switch (true) {
+                case (numberQuestion === 0): // условия скрытия кнопки prev
+                    questionTitle.textContent = `${questions[indexQuestion].question}`; // меняем текст через переменную
+                    renderAnswers(indexQuestion);
+                    prevButton.classList.add('d-none');
+                    break;
 
-            if (numberQuestion === 0) { // условия скрытия кнопки prev
-                prevButton.classList.add('d-none');
-            }
+                case (numberQuestion > 0 && numberQuestion < questions.length): // условие отрисовки кнопок next и prev 
 
-            if (numberQuestion === questions.length - 1) { // условия скрытия кнопки next                        
-                nextButton.classList.add('d-none');
+                    questionTitle.textContent = `${questions[indexQuestion].question}`; // меняем текст через переменную
+                    renderAnswers(indexQuestion);
+                    nextButton.classList.remove('d-none'); //показать кнопки
+                    prevButton.classList.remove('d-none');
+                    break;
+
+                case (numberQuestion === questions.length): // условия скрытия кнопки next                        
+                    questionTitle.textContent = ''; // очищать title            
+                    nextButton.classList.add('d-none');
+                    prevButton.classList.add('d-none');
+                    sendButton.classList.remove('d-none'); // отобразить кнопку Отправить
+
+                    //встроить окно ввода номера телефона
+                    formAnswers.innerHTML = ` 
+                    <div class="form-group">
+                        <label for="numberPhone">Введите номер телефона</label>
+                        <input type="phone" class="form-control" id="numberPhone" placeholder="+38-099-999-99-99">
+                    </div>               
+                `;
+                    const numberPhone = document.querySelector('#numberPhone'); // запрет ввода букв
+                    numberPhone.addEventListener('input', (event) => {
+                        event.target.value = event.target.value.replace(/[^0-9+-]/, ''); // регулярное выражение
+                    });
+                    break;
+
+                case (numberQuestion == questions.length + 1):
+                    formAnswers.textContent = 'Спасибо за пройденный тест. Менеджер скоро свяжется с вами.';
+                    for (let key in obj) { //метод перебора объектов
+                        let newObj = {};
+                        newObj[key] = obj[key];
+                        finalAnswers.push(newObj); //заполнить finalAnswers
+                    }
+
+                    sendButton.classList.add('d-none'); //удалять send на последней странице
+
+                    setTimeout(() => {
+                        modalBlock.classList.remove('d-block');                        
+                    }, 2000);
+                    break;
             }
         }
-
         renderQuestions(numberQuestion);
 
+        const checkAnswer = () => { //функция сбора ответов
+            const obj = {};
+            const finalAnswers = []; //переменная для ответов пользователя
+            const inputs = [...formAnswers.elements].filter((input) => input.checked || input.id === 'numberPhone'); //спред оператор, массив данных выбранных элементов формы
+
+            inputs.forEach((input, index) => { //перебор массива
+                if (numberQuestion >= 0 && numberQuestion <= questions.length - 1) {
+                    obj[`${index}_${questions[numberQuestion].question}`] = input.value;
+                }
+
+                if (numberQuestion === questions.length) { //если не вопрос, то имя объекта равно номер телефона
+                    obj[`Номер телефона`] = input.value;
+                }
+            })
+            finalAnswers.push(obj);
+        }
+
         nextButton.onclick = () => { // обработчик кнопки Далее
+            checkAnswer(); //вызов
             numberQuestion++;
             renderQuestions(numberQuestion);
         }
@@ -142,6 +196,12 @@ document.addEventListener('DOMContentLoaded', () => { // отработчик с
         prevButton.onclick = () => { // обработчик кнопки Назад
             numberQuestion--;
             renderQuestions(numberQuestion);
+        }
+
+        sendButton.onclick = () => { // отправить
+            numberQuestion++;
+            renderQuestions(numberQuestion);
+            checkAnswer();
         }
     }
 
