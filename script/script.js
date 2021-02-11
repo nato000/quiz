@@ -10,95 +10,48 @@ document.addEventListener('DOMContentLoaded', () => { // отработчик с
     const nextButton = document.querySelector('#next');
     const sendButton = document.querySelector('#send'); //отправить результат опроса    
 
-    const questions = [
-        {
-            question: "Какого цвета бургер Вы хотите?",
-            answers: [
-                {
-                    title: 'Стандарт',
-                    url: './image/burger.png'
-                },
-                {
-                    title: 'Черный',
-                    url: './image/burgerBlack.png'
-                }
-            ],
-            type: 'radio'
-        },
-        {
-            question: "Из какого мяса котлета?",
-            answers: [
-                {
-                    title: 'Курица',
-                    url: './image/chickenMeat.png'
-                },
-                {
-                    title: 'Говядина',
-                    url: './image/beefMeat.png'
-                },
-                {
-                    title: 'Свинина',
-                    url: './image/porkMeat.png'
-                }
-            ],
-            type: 'radio'
-        },
-        {
-            question: "Дополнительные ингредиенты?",
-            answers: [
-                {
-                    title: 'Помидор',
-                    url: './image/tomato.png'
-                },
-                {
-                    title: 'Огурец',
-                    url: './image/cucumber.png'
-                },
-                {
-                    title: 'Салат',
-                    url: './image/salad.png'
-                },
-                {
-                    title: 'Лук',
-                    url: './image/onion.png'
-                }
-            ],
-            type: 'checkbox'
-        },
-        {
-            question: "Добавить соус?",
-            answers: [
-                {
-                    title: 'Чесночный',
-                    url: './image/sauce1.png'
-                },
-                {
-                    title: 'Томатный',
-                    url: './image/sauce2.png'
-                },
-                {
-                    title: 'Горчичный',
-                    url: './image/sauce3.png'
-                }
-            ],
-            type: 'radio'
-        }
-    ];
+    // Your web app's Firebase configuration
+    const firebaseConfig = {
+        apiKey: "AIzaSyC1fqTqbk8HRcF38uepxLP6qAmZ7J3JM1A",
+        authDomain: "quizburger-79420.firebaseapp.com",
+        databaseURL: "https://quizburger-79420-default-rtdb.firebaseio.com",
+        projectId: "quizburger-79420",
+        storageBucket: "quizburger-79420.appspot.com",
+        messagingSenderId: "86366020526",
+        appId: "1:86366020526:web:a43cb6fe2ec0d31739de3f",
+        measurementId: "G-2RE5KBPGL0"
+    };
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
 
+    const getData = () => { //получение данных с сервера
+        formAnswers.innerHTML = 'LOAD';
+
+        nextButton.classList.add('d-none'); //скрывать кнопки до получения данных
+        prevButton.classList.add('d-none');
+
+        setTimeout(() => {
+            firebase.database().ref().child('questions').once('value') //получить доступ к базе
+                .then(snap => playTest(snap.val()));
+        }, 500);
+    }
 
     btnOpenModal.addEventListener('click', () => { //обработка нажатия       
         modalBlock.classList.add('d-block'); //добавить класс d-block
-        playTest(); //вызов функции запуска теста      
+        getData();
     })
 
     closeModal.addEventListener('click', () => { //обработка нажатия
         modalBlock.classList.remove('d-block'); //удаляем класс d-block
+
     })
 
-    const playTest = () => { //функция запуска теста
-        const obj = {}; //варианты ответов
-        let = numberQuestion = 0; //переменная с номером вопроса
+    const playTest = (questions) => { //функция запуска теста
 
+        const finalAnswers = []; //переменная для ответов пользователя
+        const obj = {};
+        let = numberQuestion = 0; //переменная с номером вопроса        
+        
         const renderAnswers = (index) => { // цикл ответов
             questions[index].answers.forEach((answer) => { // замена for на foreach
                 const answerItem = document.createElement('div'); // создать div при каждой итерации
@@ -123,6 +76,7 @@ document.addEventListener('DOMContentLoaded', () => { // отработчик с
                     questionTitle.textContent = `${questions[indexQuestion].question}`; // меняем текст через переменную
                     renderAnswers(indexQuestion);
                     prevButton.classList.add('d-none');
+                    nextButton.classList.remove('d-none'); //показать кнопки
                     break;
 
                 case (numberQuestion > 0 && numberQuestion < questions.length): // условие отрисовки кнопок next и prev 
@@ -163,16 +117,14 @@ document.addEventListener('DOMContentLoaded', () => { // отработчик с
                     sendButton.classList.add('d-none'); //удалять send на последней странице
 
                     setTimeout(() => {
-                        modalBlock.classList.remove('d-block');                        
+                        modalBlock.classList.remove('d-block');
                     }, 2000);
                     break;
             }
         }
         renderQuestions(numberQuestion);
 
-        const checkAnswer = () => { //функция сбора ответов
-            const obj = {};
-            const finalAnswers = []; //переменная для ответов пользователя
+        const checkAnswer = () => { //функция сбора ответов            c
             const inputs = [...formAnswers.elements].filter((input) => input.checked || input.id === 'numberPhone'); //спред оператор, массив данных выбранных элементов формы
 
             inputs.forEach((input, index) => { //перебор массива
@@ -184,24 +136,29 @@ document.addEventListener('DOMContentLoaded', () => { // отработчик с
                     obj[`Номер телефона`] = input.value;
                 }
             })
-            finalAnswers.push(obj);
         }
 
-        nextButton.onclick = () => { // обработчик кнопки Далее
+        nextButton.onclick = () => { //обработчик кнопки Далее
             checkAnswer(); //вызов
             numberQuestion++;
             renderQuestions(numberQuestion);
         }
 
-        prevButton.onclick = () => { // обработчик кнопки Назад
+        prevButton.onclick = () => { //обработчик кнопки Назад
             numberQuestion--;
             renderQuestions(numberQuestion);
         }
 
-        sendButton.onclick = () => { // отправить
+        sendButton.onclick = () => { //обработчик кнопки отправить
+            checkAnswer();
             numberQuestion++;
             renderQuestions(numberQuestion);
-            checkAnswer();
+
+            firebase //cохранение данных в БД
+                .database()
+                .ref()
+                .child('contacts')
+                .push(finalAnswers);
         }
     }
 
